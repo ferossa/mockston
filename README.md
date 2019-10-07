@@ -1,2 +1,3 @@
-# mockston
-Microservices mock tool
+# Mockston
+Services mock tool.
+
