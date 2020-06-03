@@ -9,4 +9,4 @@ all: build
 build: $(BUILD_LIST)
 
 $(BUILD_LIST): %_build:
-	go build github.com/ferossa/mockston/cmd/$*
+	go build -o bin/$* github.com/ferossa/mockston/cmd/$*

@@ -1,0 +1,48 @@
+connections:
+  - name: httpLocal
+    protocol: http
+    marshaller: json
+    host: 0.0.0.0
+    port: 3080
+  - name: httpExternal
+    protocol: http
+    marshaller: json
+    host: google.com
+    port: 80
+    properties:
+      https: true
+  - name: rabbitmq
+    protocol: amqp
+    marshaller: json
+    host: localhost
+    port: 5672
+    login: guest
+    password: guest
+
+listen:
+  - source: httpLocal
+    endpoints:
+      - name: httpTest
+        url: "/v1/test"
+        method: GET
+        tests:
+          - when: ~
+            then:
+              response: "test passed"
+      - name: httpDynamicTest
+        url: "/v1/dynamic/{text}"
+        method: GET
+        tests:
+          - when: ~
+            then:
+              response: "dynamic test passed"
+  - source: rabbitmq
+    endpoints:
+      - name: rmqTest
+        exchange: ""
+        routingKey: ""
+        queue: "mockston.rmqTest"
+        tests:
+          - when: ~
+            then:
+              response: "rmq test passed"
