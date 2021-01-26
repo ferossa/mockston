@@ -5,21 +5,22 @@ import (
 	"github.com/ferossa/mockston/internal/conn"
 )
 
+// IListener listener interface
 type IListener interface {
 	Listen(listen cfg.Listen) error
 }
 
-func NewListener(c conn.IConnector, m IMarshaller, p IProcessor) *Listener {
+// NewListener creates new listener
+func NewListener(c conn.IConnector, p IProcessor) *Listener {
 	return &Listener{
 		c,
-		m,
 		p,
 	}
 }
 
+// Listener listening for external requests
 type Listener struct {
 	Connection conn.IConnector
-	Marshaller IMarshaller
 	Processor  IProcessor
 }
 
@@ -44,14 +45,10 @@ func (l *Listener) onMessage(endpoint string, data []byte, context map[string]in
 		Context:  context,
 	}
 
-	// todo: unmarshal request
-
 	resp, err := l.Processor.Process(rq)
 	if err != nil {
 		return nil, err
 	}
-
-	// todo: marshal response
 
 	return resp.Content, nil
 }

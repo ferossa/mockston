@@ -49,16 +49,19 @@ func (m *Mockston) Run() {
 		m.connections[connConfig.Name] = conn.NewConnector(connConfig)
 	}
 
+	// create marshallers
+	jsonMarshaller := &JsonMarshaller{}
+
 	c := make(chan []byte)
 
 	// start listeners
 	for _, listenConfig := range suite.Listen {
 		// setup processor for specific connection
-		p := NewProcessor(1)
+		p := NewProcessor(jsonMarshaller, 1)
 		p.SetEndpoints(listenConfig.Endpoints)
 		p.Run()
 
-		l := NewListener(m.connections[listenConfig.Source], nil, p)
+		l := NewListener(m.connections[listenConfig.Source], p)
 		m.listeners = append(m.listeners, l)
 		go func(lc cfg.Listen) {
 			log.Println("listening", lc.Source)

@@ -1,19 +1,16 @@
 connections:
   - name: httpLocal
     protocol: http
-    marshaller: json
     host: 0.0.0.0
     port: 3080
   - name: httpExternal
     protocol: http
-    marshaller: json
     host: google.com
     port: 80
     properties:
       https: true
   - name: rabbitmq
     protocol: amqp
-    marshaller: json
     host: localhost
     port: 5672
     login: guest
@@ -24,8 +21,24 @@ listen:
     endpoints:
       - name: httpTest
         url: "/v1/test"
-        method: GET
+        method: POST
         tests:
+          - when:
+              param: 1
+            then:
+              response: "branch one"
+          - when:
+              param: 2
+            then:
+              response: "branch two"
+          - when:
+              param: abc
+            then:
+              response: "branch abc"
+          - when:
+              param: true
+            then:
+              response: "branch true"
           - when: ~
             then:
               response: "test passed"

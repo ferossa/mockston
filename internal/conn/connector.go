@@ -1,8 +1,9 @@
 package conn
 
 import (
-	"github.com/ferossa/mockston/internal/cfg"
 	"log"
+
+	"github.com/ferossa/mockston/internal/cfg"
 )
 
 const (
@@ -10,6 +11,7 @@ const (
 	protocolAmqp = "amqp"
 )
 
+// MessageHandler function called when message received
 type MessageHandler func(string, []byte, map[string]interface{}) ([]byte, error)
 
 // IConnector interface for connectors

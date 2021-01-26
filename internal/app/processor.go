@@ -2,6 +2,9 @@ package app
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
+
 	"github.com/ferossa/mockston/internal/cfg"
 )
 
@@ -14,16 +17,18 @@ type IProcessor interface {
 
 // Processor processor struct
 type Processor struct {
-	threads   int64
-	rqChan    chan *ProcessRequest
-	endpoints map[string][]cfg.Test
+	marshaller IMarshaller
+	threads    int64
+	rqChan     chan *ProcessRequest
+	endpoints  map[string][]cfg.Test
 }
 
 // NewProcessor create new Processor
-func NewProcessor(threads int64) *Processor {
+func NewProcessor(m IMarshaller, threads int64) *Processor {
 	return &Processor{
-		threads: threads,
-		rqChan:  make(chan *ProcessRequest),
+		marshaller: m,
+		threads:    threads,
+		rqChan:     make(chan *ProcessRequest),
 	}
 }
 
@@ -72,6 +77,13 @@ func (p *Processor) processThread() {
 func (p *Processor) doProcess(rq *ProcessRequest) *ProcessResponse {
 	resp := &ProcessResponse{}
 
+	// preprocess request
+	rqMap, err := p.unmarshalRequest(rq.Endpoint, rq.Content)
+	if err != nil {
+		resp.Error = err
+		return resp
+	}
+
 	// choose tests
 	tests, ok := p.endpoints[rq.Endpoint]
 	if !ok {
@@ -81,7 +93,7 @@ func (p *Processor) doProcess(rq *ProcessRequest) *ProcessResponse {
 
 	var foundTest *cfg.Test
 	for _, test := range tests {
-		if ok, err := p.checkCondition(&test, rq.Content, rq.Context); ok {
+		if ok, err := p.checkCondition(&test, rqMap, rq.Context); ok {
 			foundTest = &test
 			break
 		} else if err != nil {
@@ -99,11 +111,36 @@ func (p *Processor) doProcess(rq *ProcessRequest) *ProcessResponse {
 	return resp
 }
 
+// unmarshalRequest unpack message to map
+func (p *Processor) unmarshalRequest(endpoint string, body []byte) (map[string]interface{}, error) {
+	rqMap := map[string]interface{}{}
+	err := p.marshaller.Unmarshal(endpoint, body, &rqMap)
+	return rqMap, err
+}
+
 // checkCondition check test condition
-func (p *Processor) checkCondition(test *cfg.Test, body []byte, ctx map[string]interface{}) (ok bool, err error) {
+func (p *Processor) checkCondition(test *cfg.Test, rq map[string]interface{}, ctx map[string]interface{}) (bool, error) {
 	if test.When == nil {
 		return true, nil
 	}
 
-	return false, nil
+	// TODO: need to rethink how to compare test with real values
+	whenVal := reflect.ValueOf(test.When)
+	if whenVal.Kind() != reflect.Map {
+		return false, nil
+	}
+
+	for _, key := range whenVal.MapKeys() {
+		testKey := key.Interface().(string)
+		testValue := whenVal.MapIndex(key)
+		if rqValue, ok := rq[testKey]; ok {
+			if fmt.Sprintf("%v", testValue.Interface()) != fmt.Sprintf("%v", rqValue) {
+				return false, nil
+			}
+		} else {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }

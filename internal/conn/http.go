@@ -1,7 +1,6 @@
 package conn
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -20,6 +19,7 @@ func init() {
 	dynamicRouteRegexp = regexp.MustCompile("\\{(\\w+)\\}")
 }
 
+// HttpConnector
 type HttpConnector struct {
 	config           cfg.Connection
 	connectionString string
@@ -33,6 +33,7 @@ type route struct {
 	params []string
 }
 
+// addEndpoint add one endpoint from config
 func (c *HttpConnector) addEndpoint(endpoint *cfg.Endpoint) error {
 	var ok bool
 	if _, ok = c.routes[endpoint.Method]; !ok {
@@ -40,7 +41,7 @@ func (c *HttpConnector) addEndpoint(endpoint *cfg.Endpoint) error {
 	}
 
 	if _, ok = c.routes[endpoint.Method][endpoint.Url]; ok {
-		return errors.New(fmt.Sprintf("duplicate path %s for method %s", endpoint.Url, endpoint.Method))
+		return fmt.Errorf("duplicate path %s for method %s", endpoint.Url, endpoint.Method)
 	}
 
 	route := &route{name: endpoint.Name}
